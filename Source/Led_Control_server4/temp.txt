@@ -1,0 +1,125 @@
+// Load Wi-Fi library
+#include <Arduino.h>
+#define LINK_BUFF_SIZE 300
+#define MAX_IDLE_COUNT 3
+typedef uint8_t U8;
+typedef uint16_t U16;
+typedef uint32_t U32;
+U8 LinkBuffer[LINK_BUFF_SIZE];
+
+U16 ComputeCRC( U8 * Buff, U32 CharCount);
+
+#define INIT_CRC  		0  /* CCITT: 0xFFFF */
+#define CRCPOLY  		0xA001  /* ANSI CRC-16 */
+                         /* CCITT: 0x8408 */
+
+extern const int8_t TELL_TALE_1;
+extern const int8_t TELL_TALE_2;
+extern const int8_t TELL_TALE_3;
+
+static bool CRC_ERROR = false;
+static int8_t ReceiveActive, IdleCount, LastRBCount;
+void DoLinkServe()
+{
+    static int RcvCount;
+
+    if(CRC_ERROR)
+    {
+        if(Serial.available())
+        {
+            IdleCount = 0;
+            while(Serial.available())
+            {
+                Serial.read();
+            }
+        }
+        if(++IdleCount > MAX_IDLE_COUNT)
+        {
+
+    RcvCount = Serial.available();
+    if(ReceiveActive)
+    {
+        //we have already noticed one or more chars in receive buffer
+        if(RcvCount != LastRBCount)
+        {
+            LastRBCount = RcvCount;
+            IdleCount = 0;
+        }
+        else
+        {
+            ++IdleCount;
+        }
+        if(IdleCount >= 40)
+        {//nothing has arrived in 40 msec so  consider packet complete
+         //and echo it.
+            for(int i = 0; i < RcvCount; ++i)
+            {
+                Serial.write(Serial.read());
+            }
+            ReceiveActive = false;
+        }
+    }
+    else
+    {
+        if(RcvCount != 0)
+        {
+            ReceiveActive = true;
+            IdleCount = 0;
+            LastRBCount = RcvCount;
+        }
+    }
+}
+
+
+//------------------------------------------------------------------------------
+//  FUNCTION:     MakeCRCTable
+//
+//  DESCRIPTION:  This Function is used to make CRC Table
+//
+//  PARAMETERS: None
+//
+//  RETURNS:    None
+//
+//  Notes:
+//------------------------------------------------------------------------------
+static U16 CRCTable[UCHAR_MAX + 1];    //Holds Value of CRCTable
+static void MakeCRCTable()
+{
+  	static short CRCTabInited = FALSE;
+	unsigned short i, j, r;
+
+  	if(CRCTabInited)
+    	return;
+  	CRCTabInited = TRUE;
+
+  	for (i = 0; i <= UCHAR_MAX; i++)
+  	{
+		r = i;
+		for (j = 0; j < CHAR_BIT; j++)
+		{
+      		if (r & 1)
+      		{
+        		r = (r >> 1) ^ CRCPOLY;
+      		}
+      		else
+      		{
+        		r >>= 1;
+      		}
+    	}
+    	CRCTable[i] = r;
+	}
+}
+
+//Compute complete CRC on a buffer in one call.
+U16 ComputeCRC(U8 * Buff, U32 CharCount)
+{
+	U32 u;
+	U16 CRC;
+	MakeCRCTable();
+	CRC = INIT_CRC;
+	for(u=0; u < CharCount; ++u)
+	{
+		CRC = CRCTable[(CRC ^ (Buff[u] & 0xFF)) & 0xFF] ^ (CRC >> CHAR_BIT);
+	}
+	return CRC;
+}

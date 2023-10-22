@@ -1,0 +1,42 @@
+IdleServe()
+This is the background routine which does various stuff like service the link
+when the MsecTick counter is non-zero. It basically does stuff in the background
+which should happen once per msec.
+Toggles TellTale1 every msec.
+
+ESP32 LINK IMPLEMENTATION:
+We can send command packets totalling 256 bytes, that is FIdx plus up
+to 255 parameter bytes.
+Looks like we can return 255 parameter bytes in one call. That means
+the raw return packet with one status byte can be 256 bytes long.
+
+ESP32 TRACE BUFFER is 4096 bytes long.
+
+Compile time define LINK_ACTIVE if true causes link to be serviced in IdleServe()
+which is called once a millisecond. It also causes Trace() and TraceLN() calls
+to wrtie to TrqceBuffer. Otherwise the Trace calls use Serial.print which sends
+stuff to the Arduino monitor on the USB serial port on the ESP32.
+
+
+SENSEA is D35 Pin3 and services cues 0 thru 23  (HiDriveA)
+SENSEA is D39 Pin4 and services cues 24 thru 47 (HiDriveB)
+The SENSE inputs are biased a bit positive since A/D cannot read to 0 V.
+
+Put DVM on Cue 0 to measure test current through 30 Ohm resistor.
+Reading a bit unstable,  bouncing around 9.17 to 9.19 ma with occacional 9.07 ma
+reading.
+for Cue 6 measure 9.25-9.28 ma
+So looks like the +12 volt supply was off on earlier measurements
+now Cue 0 reads 10.13-10.14 ma, stable
+Cue 6 reads 10.17 stable.
+
+TestApp NOTES:
+there is a LoggingCallbackFunction registered at startup so DLL can post
+stuff to LogFile and to MessageBuffer
+
+There is a logfile "Output\TestApp\DebugTestLog.txt" added to by TestApp
+with calls to LogFile.Write. It has a message with time and date of each
+TestApp startup and for bad LinkStat messages.
+
+NessageServe() is called every ten msed in timer1_Tick().
+It reads from slave TraceBuffer as long as ConnectStatusOK is true

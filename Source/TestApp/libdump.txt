@@ -1,0 +1,34 @@
+Microsoft (R) COFF/PE Dumper Version 14.28.29337.0
+Copyright (C) Microsoft Corporation.  All rights reserved.
+
+
+Dump of file PQ10API.lib
+
+File Type: LIBRARY
+
+     Exports
+
+       ordinal    name
+
+                  _Disconnect@4
+                  _GetLinkMaxSendSize@4
+                  _GetMaxLinkReturnSize@4
+                  _GetSlaveParameter@12
+                  _MasterBlockDown@16
+                  _MasterBlockUp@16
+                  _PQ10APILoopTest@12
+                  _PQ10APIRegisterLinkStatusCallback@4
+                  _PQ10APIRegisterLoggingCallback@4
+                  _ReadTraceBuffer@12
+                  _SerialConnect@8
+                  _SetSlaveParameter@12
+                  _TraceBufferCount@4
+
+  Summary
+
+          C3 .debug$S
+          14 .idata$2
+          14 .idata$3
+           4 .idata$4
+           4 .idata$5
+           C .idata$6
